@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Net;
 
 namespace HTMLify
 {
@@ -162,12 +163,10 @@ namespace HTMLify
                 if (ftp)
                 {
                     Console.WriteLine("Writing to FTP...");
-
+                    FtpWebHandler handler = new FtpWebHandler();
+                    Template[""]
+                    handler.SendFile(Template, WebRequestMethods.Ftp.UploadFile, outputPath);
                 }
-            }
-            static void WriteToFTP()
-            {
-
             }
             static ReadAccess ReadText(string text)
             {
@@ -237,9 +236,30 @@ namespace HTMLify
         {
             foreach (char c in text.ToCharArray())
             {
-                if (!Char.IsWhiteSpace(c)) return false;
+                if (!char.IsWhiteSpace(c)) return false;
             }
             return true;
+        }
+        public static int NthIndex(this string s, char t, int n)
+        {
+            int count = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == t)
+                {
+                    count++;
+                    if (count == n)
+                    {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+        }
+        public static string GetDirectoryDownTo(this string path, int cutoff)
+        {
+            Path.GetDirectoryName(path);
+            path.NthIndex('/', cutoff);
         }
     }
 }
