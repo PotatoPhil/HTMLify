@@ -66,11 +66,6 @@ namespace HTMLify
             static string configPath;
 
             static string mode;
-            static bool ftp;
-            public static void FTPSendRequest(String[] args)
-            {
-                ftp = true;
-            }
             public static void Mode(string[] args)
             {
                 mode = "html";
@@ -159,15 +154,6 @@ namespace HTMLify
                 File.WriteAllText(outputPath, builder.ToString());
                 Console.WriteLine("Done.");
                 Console.ReadKey();
-                if (ftp)
-                {
-                    Console.WriteLine("Writing to FTP...");
-
-                }
-            }
-            static void WriteToFTP()
-            {
-
             }
             static ReadAccess ReadText(string text)
             {
