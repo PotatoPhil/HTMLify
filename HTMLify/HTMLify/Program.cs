@@ -22,8 +22,11 @@ namespace HTMLify
             commands.Add(new Command("-path")
                 .addAlias("-p"), Handlers.ReadPath);
             commands.Add(new Command("-output")
-                .addAliases(new string[] { "-o", "-out" }), Handlers.OutPath);
-            commands.Add(new Command("-configuration"), Handlers.ConPath);
+                .addAliases( "-o", "-out" ), Handlers.OutPath);
+            commands.Add(new Command("-configuration")
+                .addAliases("-config","-c"), Handlers.ConPath);
+            commands.Add(new Command("-mode")
+                .addAliases("-m", "-,"), Handlers.Mode); ;
             List<int> starts = new List<int>();
             List<Command> cmds = new List<Command>();
             for (int i = 0; i < args.Length; i++)
@@ -61,6 +64,17 @@ namespace HTMLify
             static string originalPath;
             static string outputPath;
             static string configPath;
+
+            static string mode;
+            static bool ftp;
+            public static void FTPSendRequest(String[] args)
+            {
+                ftp = true;
+            }
+            public static void Mode(string[] args)
+            {
+                mode = "html";
+            }
             public static void ReadPath(string[] args)
             {
                 Console.WriteLine(args[0]+":"+args[1]);
@@ -68,21 +82,121 @@ namespace HTMLify
             }
             public static void OutPath(string[] args)
             {
-
                 Console.WriteLine(args[0] + ":" + args[1]);
                 outputPath = args[1];
             }
             public static void ConPath(string[] args)
             {
-
+                Console.WriteLine(args[0] + ":" + args[1]);
+                configPath = args[1];
             }
+            static Dictionary<string, string> Template;
             public static void Execute()
             {
+                //string instance of the text to be htmlified
                 string txt = File.ReadAllText(originalPath);
-                Console.WriteLine(txt);
-                File.WriteAllText(outputPath, txt);
+                //array of lines in the config file
+                string[] configText = File.ReadAllLines(configPath);
+                //will hold the location of the template
+                int temLoc = -1;
+                //contains all k/v pairs within the template,wheter we support them or not.
+                Template = new Dictionary<string, string>();
+                foreach(string line in configText)
+                {
+                    Console.WriteLine("Reading Line");
+                    //# demarcates comments
+                    if (line.StartsWith("#")) continue;
+                    //split into key/value pairs
+                    string[] kp = line.Split('=');
+                    //set the te,plate start location
+                    if (line.Contains("&template")&& temLoc==-1)
+                    {
+                        temLoc = Array.IndexOf(configText, line);
+                        break;
+                    }
+                    Console.WriteLine(kp.Length + ":" + line);
+                        // k/v pair not present as in the &template tag
+                        if (kp.Length < 2) continue;
+                        
+                    // split by the # char
+                    string[] kpc = kp[1].Split('#');
+                    // use only first value, cuts out all comments.
+                    kp[1] = kpc[0];
+                    Console.Write("k/v:");
+                    Console.WriteLine("k:" + kp[0] + ",v:" + kp[1]);
+                    Template.Add(kp[0], kp[1]);
+                    
+                }
+                StringBuilder b = new StringBuilder();
+                for (int i = temLoc+1; i < configText.Length; i++)
+                {
+                    string line = configText[i];
+                    b.AppendLine(line);
+                }
+
+                ReadAccess r = ReadText(txt);
+                string template = b.ToString();
+                StringBuilder builder = new StringBuilder(template);
+                Console.WriteLine(Template["template_title"]);
+                builder.Replace(Template["template_title"], r.title);
+                builder.Replace(Template["template_css_title"], Template["css_class_title"]);
+                foreach (string paragraph in r.Paragraphs)
+                {
+                    if (paragraph != "\uE000")
+                    {
+                        builder.Replace(Template["template_body"], paragraph + "</"
+                            + Template["template_body_tag"] + ">" + "\r\n<" + Template["template_body_tag"]
+                            + " class='" + Template["template_css_body"] + "'>\r\n" + Template["template_body"]);
+                    }
+                    else
+                    {
+                        builder.Replace(Template["template_body"], "<br>\r\n<" + Template["template_body_tag"]
+                            + " class='" + Template["template_css_body"] + "'>\r\n" + Template["template_body"]);
+                    }
+                }
+                builder.Replace(Template["template_body"], "");
+                builder.Replace(Template["template_css_body"], Template["css_class_body"]);
+                File.WriteAllText(outputPath, builder.ToString());
+                Console.WriteLine("Done.");
                 Console.ReadKey();
+                if (ftp)
+                {
+                    Console.WriteLine("Writing to FTP...");
+
+                }
             }
+            static void WriteToFTP()
+            {
+
+            }
+            static ReadAccess ReadText(string text)
+            {
+                ReadAccess r = new ReadAccess();
+                r.Paragraphs = new List<string>();
+                foreach (string line in text.Split('\n'))
+                {
+                    if (!r.titleDefined && !line.IsWhitespace())
+                    {
+                        r.title = line;
+                        r.titleDefined = true;
+                    } else if (!line.IsWhitespace()) {
+                        r.Paragraphs.Add(line);
+                             }
+                    else
+                    {
+                        r.Paragraphs.Add("\uE000");
+                    }
+                }
+                return r;
+            }
+            
+        }
+        
+        struct ReadAccess
+        {
+            public List<string> Paragraphs;
+            public string title;
+            public bool titleDefined;
         }
         class Command
         {
@@ -115,6 +229,17 @@ namespace HTMLify
                 }
                 return false;
             }
+        }
+    }
+    public static class Extensions
+    {
+        public static bool IsWhitespace(this string text)
+        {
+            foreach (char c in text.ToCharArray())
+            {
+                if (!Char.IsWhiteSpace(c)) return false;
+            }
+            return true;
         }
     }
 }
