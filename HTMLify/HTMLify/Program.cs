@@ -14,8 +14,7 @@ namespace HTMLify
 
         static void Main(string[] args)
         {
-            Console.WriteLine(args.Length);
-            new Program(args);
+                         new Program(args);
         }
         public Program(string[] args)
         {
@@ -82,8 +81,7 @@ namespace HTMLify
             }
             public static void ConPath(string[] args)
             {
-                Console.WriteLine(args[0] + ":" + args[1]);
-                configPath = args[1];
+                                 configPath = args[1];
             }
             static Dictionary<string, string> Template;
             public static void Execute()
@@ -98,8 +96,7 @@ namespace HTMLify
                 Template = new Dictionary<string, string>();
                 foreach(string line in configText)
                 {
-                    Console.WriteLine("Reading Line");
-                    //# demarcates comments
+                                         //# demarcates comments
                     if (line.StartsWith("#")) continue;
                     //split into key/value pairs
                     string[] kp = line.Split('=');
@@ -109,32 +106,38 @@ namespace HTMLify
                         temLoc = Array.IndexOf(configText, line);
                         break;
                     }
-                    Console.WriteLine(kp.Length + ":" + line);
-                        // k/v pair not present as in the &template tag
+                                             // k/v pair not present as in the &template tag
                         if (kp.Length < 2) continue;
                         
                     // split by the # char
                     string[] kpc = kp[1].Split('#');
                     // use only first value, cuts out all comments.
                     kp[1] = kpc[0];
-                    Console.Write("k/v:");
-                    Console.WriteLine("k:" + kp[0] + ",v:" + kp[1]);
-                    Template.Add(kp[0], kp[1]);
+                                                              Template.Add(kp[0], kp[1]);
                     
                 }
                 StringBuilder b = new StringBuilder();
+                //reads template!
                 for (int i = temLoc+1; i < configText.Length; i++)
                 {
                     string line = configText[i];
                     b.AppendLine(line);
                 }
-
+                //Not very useful
                 ReadAccess r = ReadText(txt);
+                //whoo templates
                 string template = b.ToString();
+                //making a stringbuider. (Why bother having the stringbuilder?)
                 StringBuilder builder = new StringBuilder(template);
-                Console.WriteLine(Template["template_title"]);
+                //Write the title of the template thing(or at least the pattern)
+                                 //Titling the work
                 builder.Replace(Template["template_title"], r.title);
                 builder.Replace(Template["template_css_title"], Template["css_class_title"]);
+
+                builder.Replace(Template["template_css_body"], Template["css_class_body"]);
+
+                AddScriptAndCss(ref builder);
+
                 foreach (string paragraph in r.Paragraphs)
                 {
                     if (paragraph != "\uE000")
@@ -152,8 +155,12 @@ namespace HTMLify
                 builder.Replace(Template["template_body"], "");
                 builder.Replace(Template["template_css_body"], Template["css_class_body"]);
                 File.WriteAllText(outputPath, builder.ToString());
-                Console.WriteLine("Done.");
                 Console.ReadKey();
+                                              }
+            static void AddScriptAndCss(ref StringBuilder builder)
+            {
+                builder.Replace(Template["template_css_block"], "<link rel='stylesheet' href='" + Template["file_path_css"] + "'></link>");
+                builder.Replace(Template["template_script_block"], "<script href='" + Template["file_path_script"] + "'></script>");
             }
             static ReadAccess ReadText(string text)
             {
