@@ -23,11 +23,11 @@ namespace HTMLify
             byte[] fileContents = Encoding.UTF8.GetBytes(src.ReadToEnd());
             src.Close();
             request.ContentLength = fileContents.Length;
-
+            
             Stream reqStream = request.GetRequestStream();
             reqStream.Write(fileContents, 0, fileContents.Length);
             reqStream.Close();
-
+            Console.WriteLine("Sent Request, Uploaded File.");
             FtpWebResponse response = (FtpWebResponse)request.GetResponse();
             Console.WriteLine("Upload File complete, status {0}", response.StatusDescription);
             response.Close();

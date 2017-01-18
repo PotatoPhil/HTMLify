@@ -27,7 +27,8 @@ namespace HTMLify
             commands.Add(new Command("-configuration")
                 .addAliases("-config","-c"), Handlers.ConPath);
             commands.Add(new Command("-mode")
-                .addAliases("-m", "-,"), Handlers.Mode); ;
+                .addAliases("-m", "-,"), Handlers.Mode);
+            commands.Add(new Command("-ftp"), Handlers.FTPSendRequest);
             List<int> starts = new List<int>();
             List<Command> cmds = new List<Command>();
             for (int i = 0; i < args.Length; i++)
@@ -162,10 +163,17 @@ namespace HTMLify
                 Console.ReadKey();
                 if (ftp)
                 {
+                    if (Template["ftp_user"].Contains("\n"))
+                    {
+                        Console.WriteLine("this will never work");
+                    }
                     Console.WriteLine("Writing to FTP...");
                     FtpWebHandler handler = new FtpWebHandler();
-                    Template[""]
+                    int cutoff = int.Parse(Template["ftp_sys_cutoff"]);
+                    Template["ftp_dir_cut"] = outputPath.GetDirectoryDownTo(cutoff);
                     handler.SendFile(Template, WebRequestMethods.Ftp.UploadFile, outputPath);
+
+                    
                 }
             }
             static ReadAccess ReadText(string text)
@@ -243,7 +251,7 @@ namespace HTMLify
         public static int NthIndex(this string s, char t, int n)
         {
             int count = 0;
-            for (int i = 0; i < s.Length; i++)
+            for (int i = s.Length-1; i >-1; i--)
             {
                 if (s[i] == t)
                 {
@@ -258,8 +266,12 @@ namespace HTMLify
         }
         public static string GetDirectoryDownTo(this string path, int cutoff)
         {
-            Path.GetDirectoryName(path);
-            path.NthIndex('/', cutoff);
+            path = Path.GetDirectoryName(path);
+            int cut = path.NthIndex('/', cutoff);
+            if (cut == -1) cut = path.NthIndex('\\', cutoff);
+            Console.WriteLine("{0} , {1}", path, cut);
+            path = path.Substring(cut);
+            return path;
         }
     }
 }
